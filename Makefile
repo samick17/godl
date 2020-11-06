@@ -1,3 +1,4 @@
+MAKEFLAGS += --silent
 BIN_NAME=downloader
 
 clean:
