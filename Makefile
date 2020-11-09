@@ -9,3 +9,9 @@ build:
 
 run:
 	go run main.go
+
+test:
+	make build
+	./dist/${BIN_NAME}
+# 	./dist/${BIN_NAME} -version=85 -platform=linux
+# 	./dist/${BIN_NAME} -version=latest -platform=linux

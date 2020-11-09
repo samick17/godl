@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"bufio"
 	"strings"
 	"path"
+	"path/filepath"
 )
 
 type Client struct {
@@ -116,6 +118,7 @@ func getDriverDownloadLinks(version string) *ResponseDriverDownloadLinks {
 	}
 	return data
 }
+/* Get the full version name by user-prompt */
 func promptVersions(driverList *ResponseDrivers) string {
 	downloadableVersions := make(map[string]string)
 	for index, name := range driverList.Names {
@@ -136,6 +139,17 @@ func promptVersions(driverList *ResponseDrivers) string {
     } else {
     	return promptVersions(driverList)
     }
+}
+/* Get the full version name by prefix */
+func getVersionByPrefix(driverList *ResponseDrivers, verPrefix string) string {
+	for i := len(driverList.Names) - 1; i >= 0; i-- {
+		name := driverList.Names[i]
+		version := name[:len(name) - 1]
+		if version != "icons" && (strings.HasPrefix(version, verPrefix) || verPrefix == "latest") {
+			return version
+		}
+	}
+	return ""
 }
 func downloadDriverFromPath(relPath string) {
 	url := fmt.Sprintf("%s%s", "http://chromedriver.storage.googleapis.com/", relPath)
@@ -170,18 +184,51 @@ func promptDownload(downloadLinks *ResponseDriverDownloadLinks) string {
     	return promptDownload(downloadLinks)
     }
 }
+/* Get the full version link by platform */
+func getDownloadLinkByPlatform(downloadLinks *ResponseDriverDownloadLinks, platform string) string {
+	for i := len(downloadLinks.Names) - 1; i >= 0; i-- {
+		name := downloadLinks.Names[i]
+		version := name
+		fileNameWithExt := filepath.Base(version)
+		fileName := fileNameWithExt[:strings.Index(fileNameWithExt, ".")]
+		if strings.HasSuffix(fileName, platform) {
+			return name
+		}
+	}
+	return ""
+}
 
-func main() {
+func launchWithPrompt() {
 	httpClient = createHttpClient()
 	driverList := getDriverVersionList()
-	
 	matchedVersion := promptVersions(driverList)
-	
-    fmt.Println(fmt.Sprintf("Try to download: %s", matchedVersion))
-    // url := getDriverUrlByVersion(matchedVersion)
-    // fmt.Println(fmt.Sprintf("Download from %s to %s", url, destPath))
-    downloadLinks := getDriverDownloadLinks(matchedVersion)
-    downloadRelPath := promptDownload(downloadLinks)
-    fmt.Println(downloadRelPath)
-    downloadDriverFromPath(downloadRelPath)
+	fmt.Println(matchedVersion)
+	downloadLinks := getDriverDownloadLinks(matchedVersion)
+	downloadRelPath := promptDownload(downloadLinks)
+	fmt.Println(downloadRelPath)
+	downloadDriverFromPath(downloadRelPath)
+}
+
+func launchWithArgs(version, platform string) {
+	httpClient = createHttpClient()
+	driverList := getDriverVersionList()
+	matchedVersion := getVersionByPrefix(driverList, version)
+	fmt.Println(matchedVersion)
+	downloadLinks := getDriverDownloadLinks(matchedVersion)
+	downloadRelPath := getDownloadLinkByPlatform(downloadLinks, platform)
+	fmt.Println(downloadRelPath)
+	downloadDriverFromPath(downloadRelPath)
+}
+
+func main() {
+	var version string
+    flag.StringVar(&version, "version", "", "The version")
+    var platform string
+    flag.StringVar(&platform, "platform", "", "The platform (linux64, mac64, win32)")
+	flag.Parse()
+	if version == "" || platform == "" {
+		launchWithPrompt()
+	} else {
+		launchWithArgs(version, platform)
+	}
 }
