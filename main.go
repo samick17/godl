@@ -220,7 +220,26 @@ func launchWithArgs(version, platform string) {
 	downloadDriverFromPath(downloadRelPath)
 }
 
+func printAuthor() {
+	colorReset := "\033[0m"
+
+    colorRed := "\033[31m"
+    // colorGreen := "\033[32m"
+    // colorYellow := "\033[33m"
+    // colorBlue := "\033[34m"
+    // colorPurple := "\033[35m"
+    // colorCyan := "\033[36m"
+    // colorWhite := "\033[37m"
+	fmt.Println("+-----------------------------+")
+	fmt.Println("    ChromeDriver downloader")
+	fmt.Println("    Author: ", string(colorRed), "Samick", string(colorReset))
+	fmt.Println("    Github: ", string(colorRed), "https://github.com/samick17", string(colorReset))
+	fmt.Println("+-----------------------------+")
+}
+
 func main() {
+	printAuthor()
+	fmt.Println("Please choose the version to download:")
 	var version string
     flag.StringVar(&version, "version", "", "The version")
     var platform string
